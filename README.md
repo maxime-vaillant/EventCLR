@@ -1,10 +1,10 @@
-# SpikeCLR
+# EventCLR
 
-Self-supervised contrastive learning framework for spiking neural networks (SNNs) on neuromorphic (event-based) data. SpikeCLR adapts the SimCLR contrastive learning paradigm to the spiking domain, using event-specific augmentations and temporal-aware loss functions to learn rich spike-based representations without labels.
+Self-supervised contrastive learning framework for spiking neural networks (SNNs) on neuromorphic (event-based) data. EventCLR adapts the SimCLR contrastive learning paradigm to the spiking domain, using event-specific augmentations and temporal-aware loss functions to learn rich spike-based representations without labels.
 
 ## Overview
 
-SpikeCLR operates in two phases:
+EventCLR operates in two phases:
 
 1. **Self-Supervised Pretraining** — A spiking backbone is trained using a contrastive objective (NT-Xent loss) on augmented pairs of event streams. Two augmented views of the same event recording are passed through a shared spiking encoder and projection head, and the model learns to maximise agreement between views of the same sample.
 
@@ -19,7 +19,7 @@ Evaluations are run across varying data fractions (e.g. 1 %, 5 %, 10 %, …, 100
 
 - **Spiking Backbones:** SEW-ResNet-18 (with ADD shortcut connections), SEW-ResNet-18Sep, and Spiking VGG-9, built on [SpikingJelly](https://github.com/fangwei123456/spikingjelly).
 - **Event Augmentations:** A rich augmentation pipeline operating in both the event domain (temporal crop, spatial rolling, rotation, shear, area dropout) and the frame/tensor domain (random resized crop, horizontal flip, polarity jitter, polarity averaging).
-- **Multiple Augmentation Policies:** `spikeclr` (default), `nda` ([Neuromorphic Data Augmentation](https://arxiv.org/abs/2203.06145)), and `eventdrop`.
+- **Multiple Augmentation Policies:** `eventclr` (default), `nda` ([Neuromorphic Data Augmentation](https://arxiv.org/abs/2203.06145)), and `eventdrop`.
 - **Temporal Loss Strategies:** `naive` (average embeddings over time, then compute loss) and `temporal` (compute loss at each time-step, then average).
 - **Event Representations:** Frame-based (`ToFrame`) and voxel grid (`ToVoxelGrid`) representations via [Tonic](https://tonic.readthedocs.io/).
 - **CutMix** augmentation during supervised/evaluation training.
@@ -34,6 +34,7 @@ Evaluations are run across varying data fractions (e.g. 1 %, 5 %, 10 %, …, 100
 | N-Caltech101 | 101 | 240 × 180 × 2 |
 | N-MNIST | 10 | 34 × 34 × 2 |
 | DVS Gesture | 11 | 128 × 128 × 2 |
+| N-ImageNet | 1000 | 640 × 480 × 2 |
 
 Datasets are fetched and managed via [Tonic](https://tonic.readthedocs.io/).
 
@@ -41,8 +42,8 @@ Datasets are fetched and managed via [Tonic](https://tonic.readthedocs.io/).
 
 ```bash
 # Clone the repository
-git clone https://github.com/maxime-vaillant/SpikeCLR.git
-cd SpikeCLR
+git clone https://github.com/maxime-vaillant/EventCLR.git
+cd EventCLR
 
 # Create a virtual environment (recommended)
 python -m venv .venv
@@ -56,7 +57,7 @@ pip install -r requirements.txt
 
 ## Environment Variables
 
-SpikeCLR uses a `.env` file at the project root for configuration (loaded via `python-dotenv`). Copy the example file and fill in your values:
+EventCLR uses a `.env` file at the project root for configuration (loaded via `python-dotenv`). Copy the example file and fill in your values:
 
 ```bash
 cp .env.example .env
@@ -93,7 +94,7 @@ python main.py --target-dataset cifar10dvs --backbone resnet18 --pretrain-epochs
 
 | Argument | Default | Description |
 |---|---|---|
-| `--target-dataset` | `cifar10dvs` | Target evaluation dataset (`cifar10dvs`, `ncaltech101`, `nmnist`, `dvsgesture`) |
+| `--target-dataset` | `cifar10dvs` | Target evaluation dataset (`cifar10dvs`, `ncaltech101`, `nmnist`, `dvsgesture`, `nimagenet`) |
 | `--ssl-datasets` | *(same as target)* | Datasets used for SSL pretraining (supports multiple) |
 | `--backbone` | `resnet18` | Backbone architecture (`resnet18`, `resnet18sep`, `vgg9`) |
 | `--backbone-width` | `1.0` | Width multiplier for backbone channels |
@@ -138,15 +139,37 @@ python main.py --pretrained-run-id <MLFLOW_RUN_ID> --target-dataset cifar10dvs
 python main.py --eval-types lp ft
 ```
 
+### N-ImageNet LMDB Backend (Optional, Faster I/O)
+
+`datasets/nimagenet.py` expects `<save_to>/NImageNet/training/<class>/*.npz` and
+`<save_to>/NImageNet/validation/extracted_val/<class>/*.npz`, and supports
+`backend="auto"|"npz"|"lmdb"`:
+
+- `auto` (default): use LMDB if present, otherwise `.npz`
+- `npz`: force file-per-sample loading
+- `lmdb`: force LMDB loading
+
+Convert `.npz` to LMDB once:
+
+```bash
+python debug/convert_nimagenet_to_lmdb.py --path ~/data --split both --overwrite
+```
+
+Sanity check and compare both backends:
+
+```bash
+python debug/read_nimagenet.py --path ~/data --split both --backend lmdb --compare-backends 16
+```
+
 ## Project Structure
 
 ```
-SpikeCLR/
+EventCLR/
 ├── main.py                        # CLI entry point
 ├── augmentations/
 │   ├── provider.py                # DataTransform: train / val / pretrain views
 │   ├── transform_factory.py       # Builds representation + augmentation pipelines
-│   ├── policies.py                # SpikeCLR, NDA, and EventDrop augmentation policies
+│   ├── policies.py                # EventCLR, NDA, and EventDrop augmentation policies
 │   ├── event_transforms.py        # Event-domain transforms (crop, roll, flip, …)
 │   ├── frame_transforms.py        # Tensor-domain transforms (polarity jitter, …)
 │   ├── batch_transforms.py        # Batch-level transforms (CutMix)
@@ -155,12 +178,13 @@ SpikeCLR/
 │   ├── dataset_factory.py         # Unified dataset creation interface
 │   ├── cifar10dvs.py              # CIFAR-10 DVS dataset wrapper
 │   ├── ncaltech101.py             # N-Caltech101 dataset wrapper
+│   ├── nimagenet.py               # N-ImageNet dataset wrapper (npz / LMDB backends)
 │   └── subset.py                  # Label-efficient subset sampling
 ├── losses/
 │   ├── ntxent.py                  # NT-Xent (contrastive) loss with temporal variants
 │   └── tet.py                     # Temporal Efficient Training (TET) loss
 ├── models/
-│   ├── pretraining.py             # SpikeCLR model (backbone + projection head)
+│   ├── pretraining.py             # EventCLR model (backbone + projection head)
 │   ├── linear_probing.py          # Frozen-backbone linear evaluation module
 │   ├── finetuning.py              # Full finetuning evaluation module
 │   └── backbones/
@@ -175,17 +199,20 @@ SpikeCLR/
 │   ├── pretrain.py                # Pretraining pipeline
 │   ├── evaluation.py              # Evaluation pipeline (LP / FT / supervised)
 │   └── utils.py                   # Pipeline utilities
-└── utils/
-    ├── config.py                  # ExperimentConfig dataclass
-    ├── metrics.py                 # Evaluation metrics (Top-K accuracy)
-    ├── seed.py                    # Reproducibility utilities
-    ├── setup_mlflow.py            # MLflow setup
-    └── spiking_neuron.py          # Spiking neuron factory (LIF, IF, …)
+├── utils/
+│   ├── config.py                  # ExperimentConfig dataclass
+│   ├── metrics.py                 # Evaluation metrics (Top-K accuracy)
+│   ├── seed.py                    # Reproducibility utilities
+│   ├── setup_mlflow.py            # MLflow setup
+│   └── spiking_neuron.py          # Spiking neuron factory (LIF, IF, …)
+└── debug/
+    ├── read_nimagenet.py          # N-ImageNet loader sanity check / backend comparison
+    └── convert_nimagenet_to_lmdb.py  # Converts N-ImageNet .npz splits to LMDB
 ```
 
 ## Experiment Tracking
 
-SpikeCLR uses **MLflow** for experiment tracking. By default, experiments are logged under the `"SpikeCLR"` experiment name. To view results:
+EventCLR uses **MLflow** for experiment tracking. By default, experiments are logged under the `"EventCLR"` experiment name. To view results:
 
 ```bash
 mlflow ui

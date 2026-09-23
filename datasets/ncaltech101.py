@@ -71,8 +71,7 @@ class NCALTECH101(NCALTECH101Base):
         unique_classes = sorted(set(NCALTECH101._all_targets))
 
         for class_label in unique_classes:
-            class_samples = [i for i, target in enumerate(NCALTECH101._all_targets)
-                             if target == class_label]
+            class_samples = [i for i, target in enumerate(NCALTECH101._all_targets) if target == class_label]
 
             n_train = int(len(class_samples) * split_ratio)
             np.random.shuffle(class_samples)

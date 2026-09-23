@@ -4,6 +4,8 @@ import tonic
 
 from datasets.cifar10dvs import CIFAR10DVS
 from datasets.ncaltech101 import NCALTECH101
+from datasets.ncars import NCARS
+from datasets.nimagenet import NImageNet
 
 DEFAULT_PATH = os.path.expanduser('~/data')
 
@@ -31,11 +33,21 @@ class DatasetFactory:
             'class': tonic.datasets.DVSGesture,
             'sensor_size': tonic.datasets.DVSGesture.sensor_size,
             'num_classes': 11
+        },
+        'ncars': {
+            'class': NCARS,
+            'sensor_size': NCARS.sensor_size,
+            'num_classes': 2,
+        },
+        'nimagenet': {
+            'class': NImageNet,
+            'sensor_size': NImageNet.sensor_size,
+            'num_classes': 1000
         }
     }
 
     @classmethod
-    def create(cls, dataset_name, train=True, transform=None, path=DEFAULT_PATH):
+    def create(cls, dataset_name, train=True, transform=None, path=DEFAULT_PATH, **kwargs):
         """Create a dataset instance with proper train/test handling."""
         if dataset_name not in cls.DATASETS:
             raise ValueError(f"Unknown dataset: {dataset_name}")
@@ -46,6 +58,7 @@ class DatasetFactory:
             'transform': transform,
             'train': train
         }
+        params.update(kwargs)
 
         return config['class'](**params)
 

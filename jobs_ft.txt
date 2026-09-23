@@ -1,0 +1,57 @@
+# List your jobs here, one per line.
+# Lines starting with # are ignored.
+
+# CIFAR10DVS 8f61f10cb40d445fb6b911d0f4bb6956
+# DVSGesture 5e625193fb6d4e288caf0f5f472f1996
+# NCALTECH101 2ef2bad8d00a42048ce55c7b48914945
+# NCARS dcdf60d57a384907bdeb8bc16bebe601
+
+# ARCHI
+# python main.py --pretrained-run-id 8f61f10cb40d445fb6b911d0f4bb6956 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS | CIFAR10DVS'
+# python main.py --pretrained-run-id d82cfcbfa29541ae93fd52365a8432f9 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS | CIFAR10DVS VGG' --backbone vgg9
+# python main.py --pretrained-run-id f35e4b0ce2af4f61952a13cf540bec1b --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS | CIFAR10DVS SEP' --backbone resnet18sep
+
+# ABLATION
+# python main.py --pretrained-run-id f510a4c7ad504b718ceae51f26ebd99f --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS EVENTDROP | CIFAR10DVS'
+# python main.py --pretrained-run-id e2d22a9eda764e0ca854307cd9262f61 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS NDA | CIFAR10DVS'
+
+# python main.py --pretrained-run-id 259827c31b6542a2a57dbf906be93700 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS TEMPORAL | CIFAR10DVS'
+# python main.py --pretrained-run-id b948d8e5d43f415ca16f9346f353d802 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS SPATIAL | CIFAR10DVS'
+# python main.py --pretrained-run-id 69115fb8ab484438bc955f343218f0a4 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS POLARITY | CIFAR10DVS'
+# python main.py --pretrained-run-id 2348ff19fc6c42baa08b5457132b3fe0 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS SPATIAL POLARITY | CIFAR10DVS'
+# python main.py --pretrained-run-id 6edebf797a414cc4b6fa8ddd7342c071 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS SPATIAL TEMPORAL | CIFAR10DVS'
+# python main.py --pretrained-run-id b0c2560c4a6c4fbcb803fe1878205ced --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS POLARITY TEMPORAL | CIFAR10DVS'
+
+# TRANSFER
+# python main.py --pretrained-run-id 2ef2bad8d00a42048ce55c7b48914945 --samples-per-class 1 10 50 --samples-mode count --run-name 'NCALTECH101 | CIFAR10DVS'
+
+# python main.py --pretrained-run-id 5e625193fb6d4e288caf0f5f472f1996 --target-dataset dvsgesture --samples-per-class 1 10 50 --samples-mode count --run-name 'DVSGESTURE | DVSGESTURE'
+# python main.py --pretrained-run-id 8f61f10cb40d445fb6b911d0f4bb6956 --target-dataset dvsgesture --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS | DVSGESTURE'
+# python main.py --pretrained-run-id dcdf60d57a384907bdeb8bc16bebe601 --target-dataset dvsgesture --samples-per-class 1 10 50 --samples-mode count --run-name 'NCARS | DVSGESTURE'
+
+# python main.py --pretrained-run-id 2ef2bad8d00a42048ce55c7b48914945 --target-dataset ncaltech101 --samples-per-class 1 10 50 --samples-mode count --run-name 'NCALTECH101 | NCALTECH101'
+# python main.py --pretrained-run-id 8f61f10cb40d445fb6b911d0f4bb6956 --target-dataset ncaltech101 --samples-per-class 1 10 50 --samples-mode count --run-name 'CIFAR10DVS | NCALTECH101'
+
+# python main.py --pretrained-run-id dcdf60d57a384907bdeb8bc16bebe601 --target-dataset ncars --samples-per-class 1 10 50 --samples-mode count --run-name 'NCARS | NCARS'
+
+
+# % DATASET & ROBUST
+# python main.py --pretrained-run-id 8f61f10cb40d445fb6b911d0f4bb6956 --run-name 'CIFAR10DVS | CIFAR10DVS %'
+# python main.py --pretrained-run-id 8f61f10cb40d445fb6b911d0f4bb6956 --samples-per-class 1 10 20 50 --samples-mode count --n-subset-runs 10 --run-name 'CIFAR10DVS | CIFAR10DVS ROBUST'
+
+# python main.py --pretrained-run-id 5e625193fb6d4e288caf0f5f472f1996 --target-dataset dvsgesture --run-name 'DVSGESTURE | DVSGESTURE %'
+python main.py --pretrained-run-id 5e625193fb6d4e288caf0f5f472f1996 --target-dataset dvsgesture --samples-per-class 1 10 20 50 --samples-mode count --n-subset-runs 10 --run-name 'DVSGESTURE | DVSGESTURE ROBUST'
+
+# EFFECT % UNLABELED
+python main.py --pretrained-run-id 9d980499115d4ec4a37ec0727645a48c --target-dataset nmnist --resize-size 32 32 --samples-per-class 1 10 50 --samples-mode count --n-subset-runs 10 --run-name 'NMNIST 10K | NMNIST'
+python main.py --pretrained-run-id 083c4b0ff6a447239f6f45f4d41a7f89 --target-dataset nmnist --resize-size 32 32 --samples-per-class 1 10 50 --samples-mode count --n-subset-runs 10 --run-name 'NMNIST 60K | NMNIST'
+
+# SUPPLEMENTARY
+python main.py --pretrained-run-id 2ef2bad8d00a42048ce55c7b48914945 --target-dataset ncaltech101 --run-name 'NCALTECH101 | NCALTECH101 %'
+python main.py --pretrained-run-id 2ef2bad8d00a42048ce55c7b48914945 --target-dataset ncaltech101 --samples-per-class 1 10 20 50 --samples-mode count --n-subset-runs 10 --run-name 'NCALTECH101 | NCALTECH101 ROBUST'
+
+python main.py --pretrained-run-id dcdf60d57a384907bdeb8bc16bebe601 --target-dataset ncars --run-name 'NCARS | NCARS %'
+python main.py --pretrained-run-id dcdf60d57a384907bdeb8bc16bebe601 --target-dataset ncars --samples-per-class 1 10 20 50 --samples-mode count --n-subset-runs 10 --run-name 'NCARS | NCARS ROBUST'
+
+python main.py --pretrained-run-id 2ed4dbc1705043dc8449bcb00bced55f --samples-per-class 1 10 50 --no-normalize --samples-mode count --run-name 'CIFAR10DVS | CIFAR10DVS NO NORMALIZE'
+python main.py --pretrained-run-id 3c2b311c479c447086ee8cbd99398bf9 --samples-per-class 1 10 50 --representation voxel --samples-mode count --run-name 'CIFAR10DVS | CIFAR10DVS VOXEL'

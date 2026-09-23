@@ -133,6 +133,7 @@ class SEWResNet(nn.Module):
             if isinstance(m, SEWBasicBlock):
                 nn.init.constant_(m.bn2.weight, 0)
 
+
     def _make_layer(self, block, out_channels, blocks, stride):
         downsample = None
         if stride != 1 or self.in_channels != out_channels:

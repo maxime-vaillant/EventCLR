@@ -1,0 +1,35 @@
+# List your jobs here, one per line.
+# Lines starting with # are ignored.
+
+# CLASSICAL
+python main.py --ssl-datasets cifar10dvs --samples-per-class 1.0 --n-subset-runs 1 --run-name CIFAR10DVS
+python main.py --ssl-datasets ncaltech101 --samples-per-class 1.0 --n-subset-runs 1 --run-name NCALTECH101
+python main.py --ssl-datasets dvsgesture --samples-per-class 1.0 --n-subset-runs 1 --run-name DVSGESTURE --pretrain-epochs 1000
+python main.py --ssl-datasets ncars --samples-per-class 1.0 --n-subset-runs 1 --run-name NCARS
+
+# ARCHI
+python main.py --ssl-datasets cifar10dvs --samples-per-class 1.0 --n-subset-runs 1 --backbone vgg9 --run-name 'CIFAR10DVS VGG'
+python main.py --ssl-datasets cifar10dvs --samples-per-class 1.0 --n-subset-runs 1 --backbone resnet18sep --run-name 'CIFAR10DVS SEP'
+
+# ABLATION
+python main.py --ssl-datasets cifar10dvs --aug-setup nda --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS NDA'
+python main.py --ssl-datasets cifar10dvs --aug-setup eventdrop --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS EVENTDROP'
+
+python main.py --ssl-datasets cifar10dvs --aug-families temporal --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS TEMPORAL'
+python main.py --ssl-datasets cifar10dvs --aug-families spatial --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS SPATIAL'
+python main.py --ssl-datasets cifar10dvs --aug-families polarity --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS POLARITY'
+python main.py --ssl-datasets cifar10dvs --aug-families spatial temporal --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS SPATIAL TEMPORAL'
+python main.py --ssl-datasets cifar10dvs --aug-families polarity temporal --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS POLARITY TEMPORAL'
+python main.py --ssl-datasets cifar10dvs --aug-families spatial polarity --samples-per-class 1.0 --n-subset-runs 1 --run-name 'CIFAR10DVS SPATIAL POLARITY'
+
+# TEMPORAL LOSS
+python main.py --ssl-datasets cifar10dvs --pretrain-loss-strategy temporal --samples-per-class 1.0 --n-subset-runs 1 --run-name CIFAR10DVS TEMPORAL LOSS
+
+# EFFECT UNLABELED
+python main.py --ssl-datasets nmnist --samples-per-class 1.0 --resize-size 32 32 --n-subset-runs 1 --run-name 'NMNIST 60K'
+python main.py --ssl-datasets nmnist --samples-per-class 1.0 --resize-size 32 32 --n-subset-runs 1 --pretrain-samples 0.16666 --run-name 'NMNIST 10K'
+
+# REPRESENTATION
+python main.py --ssl-datasets cifar10dvs --samples-per-class 1.0 --representation voxel --n-subset-runs 1 --run-name 'CIFAR10DVS VOXEL'
+python main.py --ssl-datasets cifar10dvs --samples-per-class 1.0 --no-normalize --n-subset-runs 1 --run-name 'CIFAR10DVS FRAME NO NOMALIZE'
+

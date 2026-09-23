@@ -8,32 +8,34 @@ from torchvision.transforms import InterpolationMode, transforms
 from augmentations.event_transforms import RandomFlipLR, Rolling, DropEventByArea, Rotate, ShearX, RandomApply
 from augmentations.frame_transforms import PolarityJitter, RandomPolarityAverage
 
-class AugmentSpikeCLR:
-    def __init__(self, sensor_size, target_size=(48, 48), strength='light'):
+class AugmentEventCLR:
+    def __init__(self, sensor_size, target_size=(48, 48), strength='light', families=None):
         self.sensor_size = sensor_size
         self.target_size = target_size
         self.strength = strength
 
+        if families is None:
+            families = frozenset(['temporal', 'spatial', 'polarity'])
+        self.families = frozenset(families)
+
         if strength == 'light':
-            self.augmentations = RandomApply(
-                transforms.Compose([
-                    transforms.RandomResizedCrop(size=target_size, scale=(0.5, 1.0), interpolation=InterpolationMode.NEAREST_EXACT),
-                    transforms.RandomHorizontalFlip(p=0.5),
-                    RandomApply(PolarityJitter(contrast=0.2, brightness=0.2), p=0.5),
-                ]),
-                p=0.1
-            )
+            aug_list = []
+            if 'spatial' in self.families:
+                aug_list.append(transforms.RandomResizedCrop(size=target_size, scale=(0.5, 1.0), interpolation=InterpolationMode.NEAREST_EXACT))
+                aug_list.append(transforms.RandomHorizontalFlip(p=0.5))
+            if 'polarity' in self.families:
+                aug_list.append(RandomApply(PolarityJitter(contrast=0.2, brightness=0.2), p=0.5))
+            self.augmentations = RandomApply(transforms.Compose(aug_list), p=0.1) if aug_list else (lambda x: x)
 
         elif strength == 'strong':
-            self.augmentations = RandomApply(
-                transforms.Compose([
-                    transforms.RandomResizedCrop(size=target_size, scale=(0.1, 1.0), interpolation=InterpolationMode.NEAREST_EXACT),
-                    transforms.RandomHorizontalFlip(p=0.5),
-                    RandomApply(PolarityJitter(contrast=0.5, brightness=0.5), p=0.8),
-                    RandomPolarityAverage(p=0.2),
-                ]),
-                p=1.0
-            )
+            aug_list = []
+            if 'spatial' in self.families:
+                aug_list.append(transforms.RandomResizedCrop(size=target_size, scale=(0.1, 1.0), interpolation=InterpolationMode.NEAREST_EXACT))
+                aug_list.append(transforms.RandomHorizontalFlip(p=0.5))
+            if 'polarity' in self.families:
+                aug_list.append(RandomApply(PolarityJitter(contrast=0.5, brightness=0.5), p=0.8))
+                aug_list.append(RandomPolarityAverage(p=0.2))
+            self.augmentations = transforms.Compose(aug_list) if aug_list else (lambda x: x)
 
     def __call__(self, events):
         return self.augmentations(events)

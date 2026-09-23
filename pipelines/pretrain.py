@@ -10,10 +10,11 @@ from augmentations.transform_factory import TransformFactory, AugmentationSetup
 from datasets.dataset_factory import DatasetFactory
 from datasets.subset import create_subset
 from models.backbones.backbone_factory import BackboneFactory
-from models.pretraining import SpikeCLR
+from models.pretraining import EventCLR
 from modules.self_supervised import LitSelfSupervised
 from pipelines.utils import print_section
 from utils.config import ExperimentConfig
+from utils.seed import set_seed
 
 
 class PretrainPipeline:
@@ -40,6 +41,7 @@ class PretrainPipeline:
                 self.config.representation,
                 self.config.normalize,
                 setup=AugmentationSetup(self.config.aug_setup),
+                families=self.config.aug_families,
             )
             dataset = DatasetFactory.create(
                 dataset_name,
@@ -79,7 +81,7 @@ class PretrainPipeline:
             **self.config.neuron_kwargs,
         )
 
-        spikeclr = SpikeCLR(
+        eventclr = EventCLR(
             backbone=backbone,
             n_features=n_features,
             projection_dim=self.config.projection_dim,
@@ -87,7 +89,7 @@ class PretrainPipeline:
             **self.config.neuron_kwargs,
         )
         lit_model = LitSelfSupervised(
-            model=spikeclr,
+            model=eventclr,
             lr=self.config.pretrain_lr,
             weight_decay=self.config.pretrain_weight_decay,
             max_epochs=self.config.pretrain_epochs,
@@ -100,18 +102,20 @@ class PretrainPipeline:
             devices=[self.config.device],
             enable_checkpointing=False,
             logger=False,
+            deterministic="warn",
         )
+        set_seed(self.config.seed)
         trainer.fit(lit_model, train_loader)
 
         # Persist backbone weights to MLflow
         with tempfile.TemporaryDirectory() as tmp_dir:
             backbone_path = os.path.join(tmp_dir, "backbone_weights.pth")
-            torch.save(spikeclr.backbone.state_dict(), backbone_path)
+            torch.save(eventclr.backbone.state_dict(), backbone_path)
             mlflow.log_artifact(backbone_path, artifact_path="pretrained_weights")
             print("\n✓ Saved backbone weights to MLflow")
 
         mlflow.log_param("n_features", n_features)
         mlflow.log_param("backbone_architecture", self.config.backbone_name)
 
-        return spikeclr.backbone, n_features
+        return eventclr.backbone, n_features
 

@@ -6,7 +6,7 @@ import torchvision
 from tonic import transforms
 
 from augmentations.event_transforms import RandomCropTime, RandomApply, Rolling
-from augmentations.policies import AugmentSpikeCLR, NeuromorphicDataAugmentation, EventDrop
+from augmentations.policies import AugmentEventCLR, NeuromorphicDataAugmentation, EventDrop
 from augmentations.provider import DataTransform
 from augmentations.representations import ToFrame, ToVoxelGrid, ToTensor
 from utils.config import ExperimentConfig
@@ -14,7 +14,7 @@ from utils.config import ExperimentConfig
 
 class AugmentationSetup(str, Enum):
     """Available augmentation setups for pretraining / evaluation."""
-    SPIKECLR = "spikeclr"
+    EVENTCLR = "eventclr"
     NDA = "nda"
     EVENTDROP = "eventdrop"
 
@@ -41,7 +41,7 @@ class TransformFactory:
         else:
             rep_fn = ToFrame(sensor_size=sensor_size, n_time_bins=n_time_bins)
 
-        return transforms.Compose([
+        return torchvision.transforms.Compose([
             rep_fn,
             ToTensor(normalize=normalize),
             torchvision.transforms.Lambda(lambda x: torch.nn.functional.adaptive_max_pool2d(x, resize_size)),
@@ -56,13 +56,20 @@ class TransformFactory:
             cls,
             setup: AugmentationSetup,
             sensor_size: Tuple[int, int],
+            families=None,
     ):
         """Return the pre-augmentation transform for the given setup."""
-        if setup == AugmentationSetup.SPIKECLR:
-            return transforms.Compose([
-                RandomCropTime(sensor_size=sensor_size, crop_ratio=(0.1, 1.0)),
-                RandomApply(transforms.Compose([Rolling(sensor_size=sensor_size, max_shift=0.5)]), p=0.5),
-            ])
+        if families is None:
+            families = frozenset(['temporal', 'spatial', 'polarity'])
+        families = frozenset(families)
+
+        if setup == AugmentationSetup.EVENTCLR:
+            pre_transforms = []
+            if 'temporal' in families:
+                pre_transforms.append(RandomCropTime(sensor_size=sensor_size, crop_ratio=(0.1, 1.0)))
+            if 'spatial' in families:
+                pre_transforms.append(RandomApply(transforms.Compose([Rolling(sensor_size=sensor_size, max_shift=0.5)]), p=0.5))
+            return transforms.Compose(pre_transforms)
         elif setup == AugmentationSetup.NDA:
             return NeuromorphicDataAugmentation(sensor_size=sensor_size, n=2, m=3)
         elif setup == AugmentationSetup.EVENTDROP:
@@ -76,11 +83,15 @@ class TransformFactory:
             setup: AugmentationSetup,
             sensor_size: Tuple[int, int],
             resize_size: Tuple[int, int],
+            families=None,
     ):
         """Return the post-augmentation transform for the given setup."""
-        if setup == AugmentationSetup.SPIKECLR:
+        if families is None:
+            families = frozenset(['temporal', 'spatial', 'polarity'])
+
+        if setup == AugmentationSetup.EVENTCLR:
             return torchvision.transforms.Compose([
-                AugmentSpikeCLR(sensor_size=sensor_size, target_size=resize_size, strength='strong'),
+                AugmentEventCLR(sensor_size=sensor_size, target_size=resize_size, strength='strong', families=families),
             ])
         elif setup in (AugmentationSetup.NDA, AugmentationSetup.EVENTDROP):
             # NDA and EventDrop handle all augmentation in the event domain (pre-rep),
@@ -97,19 +108,26 @@ class TransformFactory:
             n_time_bins: int = 4,
             representation: str = 'frame',
             normalize: bool = True,
-            setup: AugmentationSetup = AugmentationSetup.SPIKECLR,
+            setup: AugmentationSetup = AugmentationSetup.EVENTCLR,
+            families=None,
     ) -> DataTransform:
         """Create transformations for pretraining.
 
         Args:
-            setup: Which augmentation setup to use (spikeclr, nda, eventdrop).
+            setup: Which augmentation setup to use (eventclr, nda, eventdrop).
+            families: Augmentation families to enable ('temporal', 'spatial', 'polarity').
+                      Defaults to all three. Pass a subset for ablation studies.
         """
+        if families is None:
+            families = frozenset(['temporal', 'spatial', 'polarity'])
+        families = frozenset(families)
+
         representation_fn = cls.create_representation(sensor_size, n_time_bins, resize_size, representation, normalize)
 
         return DataTransform(
-            pre_augmentation_fn=cls._build_pre_aug(setup, sensor_size),
+            pre_augmentation_fn=cls._build_pre_aug(setup, sensor_size, families=families),
             representation_fn=representation_fn,
-            post_augmentation_fn=cls._build_post_aug(setup, sensor_size, resize_size),
+            post_augmentation_fn=cls._build_post_aug(setup, sensor_size, resize_size, families=families),
         )
 
     @classmethod
@@ -142,7 +160,7 @@ class TransformFactory:
             cls,
             config: ExperimentConfig,
             sensor_size=None,
-            setup: AugmentationSetup = AugmentationSetup.SPIKECLR,
+            setup: AugmentationSetup = AugmentationSetup.EVENTCLR,
     ) -> DataTransform:
         """Create pretrain transforms from config (uses config.sensor_size by default)."""
         return cls.create_pretrain_transforms(
@@ -152,6 +170,7 @@ class TransformFactory:
             config.representation,
             config.normalize,
             setup=setup,
+            families=config.aug_families,
         )
 
     @classmethod

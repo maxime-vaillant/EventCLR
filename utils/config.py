@@ -19,6 +19,7 @@ class ExperimentConfig:
         backbone_name: str = 'resnet18',
         backbone_width: float = 1.0,
         projection_dim: int = 128,
+        neuron_type: str = 'LIF',  # 'LIF', 'IF', 'PLIF', or 'ReLU' for the ANN-equivalent baseline
 
         # Training parameters
         pretrain_epochs: int = 500,
@@ -53,7 +54,7 @@ class ExperimentConfig:
         seed: int = 42,
 
         # Augmentation setup
-        aug_setup: str = 'spikeclr',  # 'spikeclr', 'nda', or 'eventdrop'
+        aug_setup: str = 'eventclr',  # 'eventclr', 'nda', or 'eventdrop'
 
         # Pretrained weights
         pretrained_run_id: str = None,  # MLflow run ID to load pretrained weights from
@@ -64,6 +65,12 @@ class ExperimentConfig:
 
         # Evaluation types to run
         eval_types: List[str] = None,  # subset of ['lp', 'ft', 'sup']
+
+        # Run name
+        run_name: str = None,
+
+        # Augmentation families to enable (for ablation studies)
+        aug_families: List[str] = None,  # subset of ['temporal', 'spatial', 'polarity']
 
         **neuron_kwargs
     ):
@@ -108,11 +115,13 @@ class ExperimentConfig:
         self.supervised_loss_strategy = supervised_loss_strategy
 
         self.eval_types = eval_types if eval_types is not None else ['lp', 'ft', 'sup']
+        self.run_name = run_name
+        self.aug_families = frozenset(aug_families) if aug_families is not None else frozenset(['temporal', 'spatial', 'polarity'])
 
         # Dataset-specific attributes for target dataset
         self.sensor_size = DatasetFactory.get_sensor_size(target_dataset)
         self.num_classes = DatasetFactory.get_num_classes(target_dataset)
 
-        self.neuron_type = 'LIF'
+        self.neuron_type = neuron_type
         self.cnf = 'ADD'
         self.neuron_kwargs = neuron_kwargs

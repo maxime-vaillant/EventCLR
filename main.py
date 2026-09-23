@@ -9,7 +9,7 @@ from utils.config import ExperimentConfig
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run SpikeCLR self-supervised learning experiments",
+        description="Run EventCLR self-supervised learning experiments",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--target-dataset", default="cifar10dvs",
@@ -23,6 +23,10 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="Width multiplier for the backbone")
     parser.add_argument("--projection-dim", type=int, default=128,
                         help="Output dimension of the projection head")
+    parser.add_argument("--neuron-type", default="LIF", choices=["LIF", "IF", "PLIF", "ReLU"],
+                        dest="neuron_type",
+                        help="Neuron/activation used throughout the backbone and projection head: "
+                             "a spiking neuron (LIF, IF, PLIF), or 'ReLU' for the ANN-equivalent baseline")
     parser.add_argument("--pretrain-epochs", type=int, default=500)
     parser.add_argument("--eval-epochs", type=int, default=150)
     parser.add_argument("--pretrain-batch-size", type=int, default=256)
@@ -51,8 +55,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pretrained-run-id", default=None,
                         help="MLflow run ID to load pretrained backbone from (skips pretraining)")
     parser.add_argument("--eval-types", nargs="+", default=["lp", "ft", "sup"],
-                        choices=["lp", "ft", "sup"],
-                        help="Evaluation types to run: lp (linear probing), ft (finetuning), sup (supervised)")
+                        choices=["lp", "ft", "sup", "sup_aug"],
+                        help="Evaluation types to run: lp (linear probing), ft (finetuning), sup (supervised), "
+                             "sup_aug (supervised + full EventCLR augmentations)")
     parser.add_argument("--pretrain-loss-strategy", default="naive", choices=["naive", "temporal"],
                         dest="pretrain_loss_strategy",
                         help="Temporal NT-Xent loss strategy: 'naive' (mean then loss) or 'temporal' (loss then mean)")
@@ -61,6 +66,17 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="Cross entropy loss strategy: 'naive' (mean then loss) or 'temporal' (loss then mean)")
     parser.add_argument("--use-cutmix", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--cutmix-prob", type=float, default=0.5)
+    parser.add_argument("--run-name", default=None,
+                        help="MLflow run name (defaults to 'self_supervised_<dataset>')")
+    parser.add_argument("--aug-families", nargs="+",
+                        default=["temporal", "spatial", "polarity"],
+                        choices=["temporal", "spatial", "polarity"],
+                        dest="aug_families",
+                        help="Augmentation families to enable (ablation: omit any to disable it)")
+    parser.add_argument("--aug-setup", default="eventclr",
+                        choices=["eventclr", "nda", "eventdrop"],
+                        dest="aug_setup",
+                        help="Augmentation pipeline: 'eventclr', 'nda', or 'eventdrop'")
     return parser
 
 
@@ -76,6 +92,7 @@ def main() -> None:
         backbone_name=args.backbone_name,
         backbone_width=args.backbone_width,
         projection_dim=args.projection_dim,
+        neuron_type=args.neuron_type,
         pretrain_epochs=args.pretrain_epochs,
         eval_epochs=args.eval_epochs,
         pretrain_batch_size=args.pretrain_batch_size,
@@ -100,7 +117,11 @@ def main() -> None:
         eval_types=args.eval_types,
         pretrain_loss_strategy=args.pretrain_loss_strategy,
         supervised_loss_strategy=args.supervised_loss_strategy,
-        **{'decay_input': False, 'surrogate_function': surrogate.ATan(), 'backend': 'cupy'}
+        run_name=args.run_name,
+        aug_families=args.aug_families,
+        aug_setup=args.aug_setup,
+        **({'decay_input': False, 'surrogate_function': surrogate.ATan(), 'backend': 'cupy'}
+           if args.neuron_type.upper() != 'RELU' else {})
     )
 
     run_self_supervised_experiment(config)

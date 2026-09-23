@@ -68,8 +68,7 @@ class CIFAR10DVS(CIFAR10DVSBase):
         np.random.seed(seed)  # For reproducibility
 
         for class_idx in self.classes.values():
-            class_samples = [i for i, target in enumerate(CIFAR10DVS._all_targets)
-                             if target == class_idx]
+            class_samples = [i for i, target in enumerate(CIFAR10DVS._all_targets) if target == class_idx]
 
             n_train = int(len(class_samples) * split_ratio)
             np.random.shuffle(class_samples)

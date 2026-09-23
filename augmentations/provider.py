@@ -1,4 +1,5 @@
 import tonic.transforms
+import torchvision
 
 
 class DataTransform:
@@ -10,7 +11,7 @@ class DataTransform:
         if self.pre_augmentation_fn is None:
             self.pre_augmentation_fn = tonic.transforms.Compose([])
         if self.post_augmentation_fn is None:
-            self.post_augmentation_fn = tonic.transforms.Compose([])
+            self.post_augmentation_fn = torchvision.transforms.Compose([])
 
     def train_transform(self, events):
         x = self.pre_augmentation_fn(events)

@@ -54,6 +54,13 @@ def _run_eval_subset(
             mlflow.log_metric("sup_accuracy", sup_acc)
             results["sup"] = sup_acc
 
+        if "sup_aug" in eval_types:
+            with mlflow.start_run(run_name="supervised_aug", nested=True):
+                mlflow.set_tag("eval_type", "supervised_aug")
+                sup_aug_acc = pipeline.evaluate_supervised_with_aug(n_features, samples_per_class, subset_seed)
+            mlflow.log_metric("sup_aug_accuracy", sup_aug_acc)
+            results["sup_aug"] = sup_aug_acc
+
     return results
 
 
@@ -76,9 +83,9 @@ def _aggregate_and_log(accs: Dict[str, List[float]], step: int) -> Dict[str, Tup
 def run_self_supervised_experiment(config: ExperimentConfig) -> None:
     """Run self-supervised pretraining followed by evaluation on the target dataset."""
     set_seed(config.seed)
-    setup_mlflow("SpikeCLR")
+    setup_mlflow("EventCLR")
 
-    with mlflow.start_run(run_name=f"self_supervised_{config.target_dataset}"):
+    with mlflow.start_run(run_name=config.run_name or f"self_supervised_{config.target_dataset}"):
         mlflow.log_params(vars(config))
 
         # ---- Phase 1: load or pretrain backbone ----
